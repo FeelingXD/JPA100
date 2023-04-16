@@ -3,12 +3,20 @@ package com.example.sample1.notice.controller;
 import com.example.sample1.notice.entity.Notice;
 import com.example.sample1.notice.exception.AlreadyDeletedException;
 import com.example.sample1.notice.exception.NoticeNotFoundException;
+import com.example.sample1.notice.model.ResponseError;
+import com.example.sample1.notice.model.NoticeDeleteInput;
 import com.example.sample1.notice.model.NoticeInput;
 import com.example.sample1.notice.model.NoticeModel;
 import com.example.sample1.notice.repository.NoticeRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.Errors;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -178,7 +186,7 @@ public class ApiNoticeController {
 
 
     @DeleteMapping("/api/notice/{id}")
-    public void deleteNotice2(@PathVariable Long id){
+    public void deleteNotice23(@PathVariable Long id){
         Notice notice = noticeRepository.findById(id).orElseThrow(() -> new NoticeNotFoundException("공지사항이 존재하지 않습니다."));
 
         if(notice.isDeleted()){
@@ -189,7 +197,82 @@ public class ApiNoticeController {
         notice.setDeletedDate(LocalDateTime.now());
 
         noticeRepository.save(notice);
+    }
+
+    @DeleteMapping("/api/notice")
+    public void deleteNoticeList24(@RequestBody NoticeDeleteInput noticeDeleteInput){
+        List<Notice> list = noticeRepository.findByIdIn(noticeDeleteInput.getIdList());
+        if(list.size()==0){
+            throw new NoticeNotFoundException("공지사항이 존재하지 않습니다.");
         }
+
+        list.stream().forEach(notice -> {notice.setDeleted(true); notice.setDeletedDate(LocalDateTime.now());});
+
+        noticeRepository.saveAll(list);
+    }
+
+    @DeleteMapping("/api/notice/all")
+    public void deleteAll25(){
+        noticeRepository.deleteAll();
+    }
+
+//    @PostMapping("/api/notice")
+    public void addNotice26(@RequestBody NoticeInput noticeInput){
+        Notice notice = Notice.builder().
+                title(noticeInput.getTitle()).
+                contents(noticeInput.getContents()).
+                hits(0).
+                likes(0).
+                regDate(LocalDateTime.now())
+                .build();
+
+        noticeRepository.save(notice);
+
+    }
+
+    @PostMapping("/api/notice27")
+    public ResponseEntity<Object> addNotice27(@RequestBody @Validated NoticeInput noticeInput
+    , Errors errors){
+
+        if(errors.hasErrors()){
+            List<ResponseError> responseErrors = new ArrayList<>();
+
+            errors.getAllErrors().stream().forEach(e->{
+
+                responseErrors.add(ResponseError.of((FieldError) e));
+            });
+            return new ResponseEntity<>(responseErrors,HttpStatus.BAD_REQUEST);
+        }
+
+        noticeRepository.save(Notice.builder().
+                title(noticeInput.getTitle()).
+                contents(noticeInput.getContents()).
+                hits(0).
+                likes(0).
+                regDate(LocalDateTime.now())
+                .build());
+
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/api/notice/latest/{size}")
+    public Page<Notice> noticeLatest28(@PathVariable int size ){
+
+        return noticeRepository.findAll(PageRequest.of(0,10, Sort.Direction.DESC,"regDate"));
+    }
+    
+    @PostMapping("/api/notice30")
+    public void addNotice30(@RequestBody NoticeInput noticeInput){
+        
+        //중복체크
+        LocalDateTime checkDate=LocalDateTime.now().minusMinutes(1); //현재시간보다 1분전
+        
+        
+        
+    }
+    
+
+
 
 
 }
