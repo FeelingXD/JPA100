@@ -1,6 +1,9 @@
 package com.example.sample1.user.controller;
 
+import com.example.sample1.notice.entity.Notice;
+import com.example.sample1.notice.model.NoticeResponse;
 import com.example.sample1.notice.model.ResponseError;
+import com.example.sample1.notice.repository.NoticeRepository;
 import com.example.sample1.user.entity.User;
 import com.example.sample1.user.model.UserInput;
 import com.example.sample1.user.model.UserResponse;
@@ -18,12 +21,14 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @RestController
 public class ApiUserController {
 
     private final UserRepository userRepository;
+    private final NoticeRepository noticeRepository;
 
     @PostMapping("/api/user31")
     public ResponseEntity<?> addUser31(@RequestBody @Validated UserInput userInput, Errors errors){
@@ -92,4 +97,17 @@ public class ApiUserController {
 
         return UserResponse.of(user);
     }
+
+    @GetMapping("/api/user/{id}/notice35")
+    public List<NoticeResponse> userNotice35(@PathVariable Long id){
+
+        User user = userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("정보없음"));
+
+        List<Notice> list = noticeRepository.findByUser(user);
+
+        return list.stream().map(NoticeResponse::of).collect(Collectors.toList());
+    }
+
+
+
 }
