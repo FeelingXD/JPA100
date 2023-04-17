@@ -2,6 +2,7 @@ package com.example.sample1.notice.controller;
 
 import com.example.sample1.notice.entity.Notice;
 import com.example.sample1.notice.exception.AlreadyDeletedException;
+import com.example.sample1.notice.exception.DuplicateNoticeException;
 import com.example.sample1.notice.exception.NoticeNotFoundException;
 import com.example.sample1.notice.model.ResponseError;
 import com.example.sample1.notice.model.NoticeDeleteInput;
@@ -27,6 +28,11 @@ import java.util.List;
 @RestController
 public class ApiNoticeController {
 
+    @ExceptionHandler(DuplicateNoticeException.class)
+    public ResponseEntity<String> duplicateNotice(DuplicateNoticeException e){
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(e.getMessage());
+    }
     private final NoticeRepository noticeRepository;
    /* @GetMapping("/api/notice")
     public String noticeString() {
@@ -266,11 +272,29 @@ public class ApiNoticeController {
         
         //중복체크
         LocalDateTime checkDate=LocalDateTime.now().minusMinutes(1); //현재시간보다 1분전
-        
-        
-        
+
+
+        List<Notice> noticeList = noticeRepository.findByTitleAndContentsAndRegDateIsGreaterThanEqual(
+                noticeInput.getTitle(),
+                noticeInput.getContents(),
+                checkDate);
+        if(noticeList.size()>0){
+            throw  new DuplicateNoticeException("동일한 내용의 공지사항이 존재합니다.");
+        }
+
+        noticeRepository.save(
+                Notice.builder()
+                        .title(noticeInput.getTitle())
+                        .contents(noticeInput.getContents())
+                        .regDate(LocalDateTime.now())
+                        .likes(0)
+                        .hits(0)
+                        .build()
+        );
+
+
     }
-    
+
 
 
 
