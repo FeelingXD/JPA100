@@ -5,15 +5,16 @@ spring:
       path: /h2
 
   datasource:
-    url: jdbc:h2:mem:backofficeDb
+    url: jdbc:h2:mem:backofficeDb;MODE=mysql;
     driver-class-name: org.h2.Driver
     username: root
     password: '1111'
 
+
   jpa:
     hibernate:
-      ddl-auto: update
-    generate-ddl: true
+      ddl-auto: create-drop
+    generate-ddl: false
 
     properties:
       format_sql: true
