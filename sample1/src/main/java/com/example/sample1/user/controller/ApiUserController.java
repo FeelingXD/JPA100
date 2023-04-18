@@ -108,6 +108,27 @@ public class ApiUserController {
         return list.stream().map(NoticeResponse::of).collect(Collectors.toList());
     }
 
+    @PostMapping("/api/user36")
+    public ResponseEntity<?> addUser36(@RequestBody @Validated UserInput userInput, Errors errors){
+        if (errors.hasErrors()){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors.getAllErrors().stream().map(e->ResponseError.of((FieldError)e)).collect(Collectors.toList()));
+        }
+
+        if(userRepository.countByEmail(userInput.getEmail())>0)
+            throw new RuntimeException("이메일이 존재합니다.");
+
+        User user = User.builder()
+                .email(userInput.getEmail())
+                .userName(userInput.getUserName())
+                .password(userInput.getPassword())
+                .phone(userInput.getPhone())
+                .regDate(LocalDateTime.now())
+                .build();
+
+        userRepository.save(user);
+        return ResponseEntity.ok().build();
+    }
+
 
 
 }
