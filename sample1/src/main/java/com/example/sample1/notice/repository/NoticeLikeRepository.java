@@ -1,6 +1,5 @@
 package com.example.sample1.notice.repository;
 
-import com.example.sample1.notice.entity.Notice;
 import com.example.sample1.notice.entity.NoticeLike;
 import com.example.sample1.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;

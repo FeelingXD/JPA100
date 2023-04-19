@@ -1,7 +1,6 @@
 package com.example.sample1.user.controller;
 
 import com.example.sample1.notice.entity.Notice;
-import com.example.sample1.notice.entity.NoticeLike;
 import com.example.sample1.notice.model.NoticeResponse;
 import com.example.sample1.notice.model.ResponseError;
 import com.example.sample1.notice.repository.NoticeLikeRepository;
@@ -219,7 +218,7 @@ public class ApiUserController {
     public HttpEntity<?> likeNotice42(@PathVariable Long id){
         User user = userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("유저정보없음"));
 
-        
+
         return ResponseEntity.ok(noticeLikeRepository.findByUser(user));
     }
 
