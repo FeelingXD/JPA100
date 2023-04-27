@@ -1,5 +1,7 @@
 package com.example.sample1.user.controller;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
 import com.example.sample1.notice.entity.Notice;
 import com.example.sample1.notice.model.NoticeResponse;
 import com.example.sample1.notice.model.ResponseError;
@@ -7,11 +9,9 @@ import com.example.sample1.notice.repository.NoticeLikeRepository;
 import com.example.sample1.notice.repository.NoticeRepository;
 import com.example.sample1.user.entity.User;
 import com.example.sample1.user.exception.PasswordNotMatchException;
-import com.example.sample1.user.model.UserInput;
-import com.example.sample1.user.model.UserInputPassword;
-import com.example.sample1.user.model.UserResponse;
-import com.example.sample1.user.model.UserUpdate;
+import com.example.sample1.user.model.*;
 import com.example.sample1.user.repository.UserRepository;
+import com.example.sample1.util.PasswordUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpEntity;
@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -217,12 +218,53 @@ public class ApiUserController {
     @GetMapping("/api/user/{id}/notice/like42")
     public HttpEntity<?> likeNotice42(@PathVariable Long id){
         User user = userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("유저정보없음"));
-
-
         return ResponseEntity.ok(noticeLikeRepository.findByUser(user));
     }
 
+    @PostMapping("/api/user/login43")
+    public ResponseEntity<?> createToken43(@Validated @RequestBody UserLogin userLogin, Errors errors){
+
+        if (errors.hasErrors()){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors.getAllErrors().stream().map(e->ResponseError.of((FieldError)e)).collect(Collectors.toList()));
+        }
+
+        User user = userRepository.findByEmail(userLogin.getEmail())
+                .orElseThrow(() -> new UsernameNotFoundException("사용자 정보가 없습니다."));
+
+        if(!PasswordUtils.equalPassword(userLogin.getPassword(),user.getPassword())){
+            throw new PasswordNotMatchException("비밀번호 불일치");
+        }
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/api/user/login44")
+    public ResponseEntity<?> createToken44(@Validated @RequestBody UserLogin userLogin, Errors errors){
+
+        if (errors.hasErrors()){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors.getAllErrors().stream().map(e->ResponseError.of((FieldError)e)).collect(Collectors.toList()));
+        }
+
+        User user = userRepository.findByEmail(userLogin.getEmail())
+                .orElseThrow(() -> new UsernameNotFoundException("사용자 정보가 없습니다."));
+
+        if(!PasswordUtils.equalPassword(userLogin.getPassword(),user.getPassword())){
+            throw new PasswordNotMatchException("비밀번호 불일치");
+        }
 
 
+        //토큰 발행
+        String token=JWT.create()
+                .withExpiresAt(new Date())
+                .withClaim("user_id",user.getId())
+                .withSubject(user.getUserName())
+                .withIssuer(user.getEmail())
+                .sign(Algorithm.HMAC512("fastcampus".getBytes()));
+
+
+
+        return ResponseEntity.ok().body(UserLoginToken.builder()
+                .token(token).build());
+    }
 
 }
