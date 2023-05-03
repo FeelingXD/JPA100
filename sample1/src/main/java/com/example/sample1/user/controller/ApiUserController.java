@@ -24,6 +24,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
@@ -266,5 +267,57 @@ public class ApiUserController {
         return ResponseEntity.ok().body(UserLoginToken.builder()
                 .token(token).build());
     }
+    @PostMapping("/api/user/login45")
+    public ResponseEntity<?> createToken45(@Validated @RequestBody UserLogin userLogin, Errors errors){
 
+        if (errors.hasErrors()){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors.getAllErrors().stream().map(e->ResponseError.of((FieldError)e)).collect(Collectors.toList()));
+        }
+
+        User user = userRepository.findByEmail(userLogin.getEmail())
+                .orElseThrow(() -> new UsernameNotFoundException("사용자 정보가 없습니다."));
+
+        if(!PasswordUtils.equalPassword(userLogin.getPassword(),user.getPassword())){
+            throw new PasswordNotMatchException("비밀번호 불일치");
+        }
+        LocalDateTime expiredDateTime = LocalDateTime.now().plusMonths(1); //1개월추가
+
+        Date expriredDate=java.sql.Timestamp.valueOf(expiredDateTime);
+        //토큰 발행
+        String token=JWT.create()
+                .withExpiresAt(expriredDate)
+                .withClaim("user_id",user.getId())
+                .withSubject(user.getUserName())
+                .withIssuer(user.getEmail())
+                .sign(Algorithm.HMAC512("fastcampus".getBytes()));
+
+
+
+        return ResponseEntity.ok().body(UserLoginToken.builder()
+                .token(token).build());
+    }
+
+    @PatchMapping("/api/user/login46")
+    public ResponseEntity<?> refreshToken(HttpServletRequest request){
+        String token=request.getHeader("F-TOKEN");
+
+
+        String email = JWT.require(Algorithm.HMAC512("fastcampus".getBytes()))
+                .build()
+                .verify(token)
+                .getIssuer();
+
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("정보없음"));
+
+        LocalDateTime expiredDateTime = LocalDateTime.now().plusMonths(1); //1개월추가
+        Date expriredDate=java.sql.Timestamp.valueOf(expiredDateTime);
+        String newToken =JWT.create()
+                .withExpiresAt(expriredDate)
+                .withClaim("user_id",user.getId())
+                .withSubject(user.getUserName())
+                .withIssuer(user.getEmail())
+                .sign(Algorithm.HMAC512("fastcampus".getBytes()));
+
+        return ResponseEntity.ok().body(UserLoginToken.builder().token(newToken).build());
+    }
 }
